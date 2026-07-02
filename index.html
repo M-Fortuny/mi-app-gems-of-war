@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gems of War - Mi Biblioteca</title>
+    <!-- Asegúrate de que el archivo se llame exactamente style.css -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,9 +14,39 @@
     
     <main>
         <div id="lista-tropas" class="grid-container">
-            </div>
+            <p>Cargando datos...</p>
+        </div>
     </main>
 
-    <script src="app.js"></script>
+    <script>
+        const contenedor = document.getElementById('lista-tropas');
+
+        // Intentamos cargar el archivo JSON
+        fetch('data/troops.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('No se pudo encontrar el archivo (Error ' + response.status + ')');
+                }
+                return response.json();
+            })
+            .then(tropas => {
+                contenedor.innerHTML = ''; // Limpiamos el texto de carga
+                
+                tropas.forEach(tropa => {
+                    const div = document.createElement('div');
+                    div.className = 'tropa-card';
+                    div.innerHTML = `
+                        <img src="${tropa.imagen_url}" alt="${tropa.nombre}">
+                        <h3>${tropa.nombre}</h3>
+                        <p>${tropa.rareza}</p>
+                    `;
+                    contenedor.appendChild(div);
+                });
+            })
+            .catch(error => {
+                contenedor.innerHTML = '<p style="color: red;">Error: ' + error.message + 
+                '<br>Asegúrate de que la carpeta se llame "data" y contenga "troops.json"</p>';
+            });
+    </script>
 </body>
 </html>
