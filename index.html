@@ -1691,7 +1691,7 @@
             switchGps.checked = gpsActivo;
             if (labelGps) labelGps.innerText = gpsActivo ? 'Real' : 'Simulado';
 
-                function consultarGpsReal() {
+                    function consultarGpsReal() {
         if (!navigator.geolocation) {
             alert("Su navegador no soporta geolocalizacion.");
             switchGps.checked = false;
@@ -1702,21 +1702,36 @@
         
         navigator.geolocation.getCurrentPosition(
             function(position) {
-                var lat = position.coords.latitude.toFixed(2);
-                var lon = position.coords.longitude.toFixed(2);
+                var lat = position.coords.latitude;
+                var lon = position.coords.longitude;
                 
-                // Formateo estético para evitar mostrar solo números crudos en entornos de producción
-                txtClima.style.color = "#2E7D32"; // Verde de éxito
-                txtClima.innerText = "Ubicación GPS (" + lat + ", " + lon + ") - 22°C";
+                // Consultamos el servicio gratuito de OpenStreetMap para traducir las coordenadas a ciudad
+                var urlNominatim = "https://openstreetmap.org" + lat + "&lon=" + lon;
                 
-                // NOTA: Cuando asocies tu API key de OpenWeatherMap, aquí podrás sustituir el texto por:
-                // fetch(`api_url&lat=${lat}&lon=${lon}`).then(...) para pintar la ciudad real.
+                fetch(urlNominatim)
+                    .then(function(response) { 
+                        return response.json(); 
+                    })
+                    .then(function(data) {
+                        // Extraemos la ciudad, municipio o pueblo de forma segura
+                        var ciudad = data.address.city || data.address.town || data.address.village || data.address.municipality || "Ubicacion Real";
+                        
+                        txtClima.style.color = "#2E7D32"; // Verde de éxito
+                        txtClima.innerText = ciudad + " (GPS) - 22°C";
+                    })
+                    .catch(function(err) {
+                        // Si falla la red o el servicio, mostramos las coordenadas de respaldo de forma estetica
+                        console.warn("Fallo geocodificacion inversa:", err);
+                        txtClima.style.color = "#2E7D32";
+                        txtClima.innerText = "GPS Activo (" + lat.toFixed(2) + ", " + lon.toFixed(2) + ") - 22°C";
+                    });
             },
             function(error) {
                 console.warn("Bloqueo de WebKit o denegado:", error.message);
                 alert("WebKit bloqueo el GPS. Recuerde que requiere entorno seguro HTTPS (Netlify) y otorgar permisos en el iPad.");
                 switchGps.checked = false;
                 if (labelGps) labelGps.innerText = "Simulado";
+                if (avisoExplicacion) avisoExplicacion.style.display = "block";
                 txtClima.style.color = "#1976D2";
                 txtClima.innerText = "Madrid (Offline) - 22°C";
                 localStorage.setItem('cfg_gps_real', 'false');
@@ -1724,6 +1739,7 @@
             { timeout: 5000 }
         );
     }
+
 
 
                 // Escuchar cambios en el interruptor de Localizacion
