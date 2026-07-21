@@ -3062,27 +3062,38 @@ window.toggleSeccion = function(containerId, iconId) {
 
 
         // --- CARGA DINÁMICA DE FACTORES EN EL DESPLEGABLE HORIZONTAL ---
-function cargarListaFactores() {
+function cargarListaFactores(datosDelRango) {
     const menu = document.getElementById('menu-factores-horizontal');
     if (!menu) return;
 
-    // Usamos KEY_GLUCOSA si existe para mantener coherencia con refrescarGraficaHorizontal
-    const keyStorage = typeof KEY_GLUCOSA !== 'undefined' ? KEY_GLUCOSA : 'misRegistros_v3';
-    const rawData = localStorage.getItem(keyStorage);
+    // Si no nos pasan los datos filtrados por rango, los leemos del storage
+    let registros = datosDelRango;
+    if (!registros) {
+        const keyStorage = typeof KEY_GLUCOSA !== 'undefined' ? KEY_GLUCOSA : 'misRegistros_v3';
+        const rawData = localStorage.getItem(keyStorage);
+        registros = rawData ? JSON.parse(rawData) : [];
+    }
 
-    if (!rawData) {
-        menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin factores registrados</div>';
+    if (!Array.isArray(registros) || registros.length === 0) {
+        menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin registros</div>';
         return;
     }
 
     try {
-        const registros = JSON.parse(rawData);
         const factoresUnicos = new Set();
 
         registros.forEach(r => {
+            if (!r) return;
             const tipo = (r.tipo || '').toLowerCase();
-            const detalle = r.detalles || r.factor || r.evento || r.nota || '';
 
+            // 1. Extraer del array r.factores (donde guardas 'Paseo', 'Comida', etc.)
+            if (Array.isArray(r.factores)) {
+                r.factores.forEach(f => {
+                    if (f && typeof f === 'string') factoresUnicos.add(f.trim());
+                });
+            }
+            // 2. Extraer de propiedades individuales si existen
+            const detalle = r.detalles || r.factor || r.evento || r.nota || '';
             if (tipo !== 'glucosa' && tipo !== 'insulina' && detalle) {
                 factoresUnicos.add(detalle.trim());
             } else if (tipo && tipo !== 'glucosa' && tipo !== 'insulina') {
@@ -3091,7 +3102,7 @@ function cargarListaFactores() {
         });
 
         if (factoresUnicos.size === 0) {
-            menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin factores en el historial</div>';
+            menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin factores en este rango</div>';
             return;
         }
 
@@ -3102,10 +3113,10 @@ function cargarListaFactores() {
         `;
 
         factoresUnicos.forEach(factor => {
-            const esActivo = factorHorizontalSeleccionado === factor;
+            const esActivo = typeof factorHorizontalSeleccionado !== 'undefined' && factorHorizontalSeleccionado === factor;
             const estiloActivo = esActivo ? 'background: rgba(255,82,82,0.2); font-weight:bold;' : '';
             
-            // Escapamos comillas simples para evitar romper el evento onclick inline
+            // Escapamos comillas simples
             const factorEscapado = factor.replace(/'/g, "\\'");
 
             html += `
@@ -3120,6 +3131,7 @@ function cargarListaFactores() {
         console.error("Error al poblar la lista de factores:", e);
     }
 }
+
 
 // --- GESTIÓN DE SELECCIÓN DE FACTOR Y REFRESCO DE LA GRÁFICA ---
 function seleccionarFactorHorizontal(factor) {
