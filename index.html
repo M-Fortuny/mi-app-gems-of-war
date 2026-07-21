@@ -3,657 +3,761 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DiaManager - Chasis Dorado</title>
+    <title>Pawsitive Gluc - Chasis Dorado</title>
+    
+    <!-- Librería para el Gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <style>
+        /* ==========================================================================
+           VARIABLES Y DISEÑO GENERAL (CHASIS DORADO & TEMAS)
+           ========================================================================== */
+        :root {
+            /* Palette Dorado & Chasis */
+            --gold-gradient: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+            --gold-border: #d4af37;
+            --gold-glow: rgba(212, 175, 55, 0.35);
+            --chasis-bg: #141414;
 
-    <!-- AQUÍ PEGAS TODA LA PARTE 1 (Tu CSS, incluyendo las etiquetas 
+            /* Variables de Tema por Defecto (Dark Premium) */
+            --bg-color: #1a1a1c;
+            --card-bg: #242428;
+            --text-main: #f0f0f5;
+            --text-muted: #a0a0ab;
+            --h1-color: #f5d77f;
+            --accent-color: #d4af37;
+            --border-color: #383842;
+            --input-bg: #1e1e22;
+        }
 
-<style> /* Estilos Globales y Variables */
+        /* Tema Claro */
+        [data-theme="light"] {
+            --bg-color: #f4f5f8;
+            --card-bg: #ffffff;
+            --text-main: #2c2c30;
+            --text-muted: #6e6e78;
+            --h1-color: #8a6200;
+            --accent-color: #b8860b;
+            --border-color: #e0e0e6;
+            --input-bg: #f0f0f4;
+        }
 
-:root {
-    --bg-color: #f4f7f6;
-    --card-bg: #ffffff;
-    --text-main: #333333;
-    --accent-color: #4A7C44;
-    --border-color: #e0e0e0;
-    --shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-body.theme-dark {
-    --bg-color: #121212;
-    --card-bg: #1e1e1e;
-    --text-main: #e0e0e0;
-    --border-color: #333333;
-    --accent-color: #64B5F6;
-}
+        body {
+            background-color: #0d0d0e;
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-main);
-    margin: 0;
-    padding: 20px;
-    transition: background-color 0.3s, color 0.3s;
-}
+        /* ==========================================================================
+           ESTRUCTURA DEL CHASIS DORADO
+           ========================================================================== */
+        .chasis-dorado {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-color);
+            border-radius: 40px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.8),
+                0 0 25px var(--gold-glow);
+            border: 3px solid transparent;
+            background-image: 
+                linear-gradient(var(--bg-color), var(--bg-color)), 
+                var(--gold-gradient);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
 
-/* Contenedores y Layout */
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-}
+        /* Muesca estética del Chasis */
+        .chasis-dorado::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 5px;
+            background: var(--gold-gradient);
+            border-radius: 10px;
+            opacity: 0.7;
+        }
 
-.card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-}
+        /* ==========================================================================
+           BLOQUES Y COMPONENTES
+           ========================================================================== */
+        .bloque-ajustado {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
 
-.grid-2 { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px; 
-}
+        header h1 {
+            margin: 10px 0 0 0;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--h1-color);
+            cursor: pointer;
+            user-select: none;
+        }
 
-/* Componentes UI */
-button {
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: opacity 0.2s;
-}
+        /* Tarjeta Glucosa */
+        #tarjeta-glucosa {
+            text-align: center;
+            position: relative;
+        }
 
-button:active { opacity: 0.8; }
+        .btn-perfil {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
 
-button.secundario {
-    background-color: transparent;
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
-}
+        .img-icono-perfil {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+            object-fit: cover;
+        }
 
-.valor-gigante {
-    font-size: 3.5rem;
-    font-weight: 800;
-    text-align: center;
-    margin: 10px 0;
-    color: var(--accent-color);
-}
+        #valor-glucosa {
+            font-size: 2.8rem;
+            margin: 8px 0 15px 0;
+            color: var(--accent-color);
+            font-weight: 800;
+        }
 
-/* Modales */
-dialog {
-    background-color: var(--card-bg);
-    color: var(--text-main);
-    border: none;
-    border-radius: 12px;
-    padding: 25px;
-    width: 90%;
-    max-width: 450px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
+        /* Botones Rápidos */
+        .contenedor-botones-rapidos {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
 
-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+        .btn-rapido {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
 
-input, select {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background-color: var(--bg-color);
-    color: var(--text-main);
-    box-sizing: border-box;
-}
+        .btn-rapido:active {
+            transform: scale(0.96);
+        }
 
-/* Listas y Tags */
-ul { list-style: none; padding: 0; }
-li {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    margin-bottom: 10px;
-    padding: 15px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+        /* Contenedor Gráfico */
+        #contenedor-grafico {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            min-height: 220px;
+        }
 
-.tags-factores {
-    display: inline-block;
-    background-color: var(--border-color);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    margin-right: 5px;
-    margin-top: 5px;
-}
+        /* Acordeones y Secciones */
+        .header-colapsable {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
 
-.btn-accion { padding: 5px 10px; font-size: 0.9rem; margin-left: 5px; }
-.btn-borrar { background-color: #d32f2f; }
-.btn-editar { background-color: #1976d2; }
+        .icono-colapso {
+            font-size: 0.9rem;
+            transition: transform 0.3s;
+        }
 
- </style>)
+        .acordeon-container {
+            max-height: 1200px;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+        }
 
+        .acordeon-container.colapsado {
+            max-height: 0;
+        }
+
+        /* Selectores Matriz (Filtros) */
+        .selector-matriz {
+            display: flex;
+            background: var(--input-bg);
+            border-radius: 10px;
+            padding: 3px;
+            border: 1px solid var(--border-color);
+        }
+
+        .opcion-tipo, .opcion-tiempo {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .opcion-tipo.activo, .opcion-tiempo.activo {
+            background: var(--accent-color);
+            color: #ffffff;
+        }
+
+        /* Herramientas & Backup */
+        .titulo-herramientas {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .botones-herramientas {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-herramienta {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Modales (<dialog>) */
+        dialog {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 2px solid var(--accent-color);
+            border-radius: 24px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-form {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background-color: var(--accent-color);
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Chips y Formularios */
+        .checkbox-grupo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            background: var(--input-bg);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .form-perfil-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Switches de Configuración */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .fila-config { margin-bottom: 15px; }
+        .cabecera-fila { display: flex; justify-content: space-between; align-items: center; }
+        .info-columna { display: flex; flex-direction: column; width: 80%; }
+        .titulo-opcion { font-size: 0.85rem; font-weight: bold; }
+        .desc-opcion { font-size: 0.75rem; color: var(--text-muted); }
+    </style>
 </head>
 <body>
 
-    <!-- AQUÍ PEGAS TODA LA PARTE 2 (Mi HTML) -->
-
-<!-- ========================================== -->
-<!-- PARTE 2: HTML (ESTRUCTURA DE LA APP)       -->
-<!-- ========================================== -->
-
-<div id="contenedor-fijo-superior">
-    <header>
-        <span id="btn-toggle-theme" style="position: absolute; left: 15px; font-size: 1.5rem; padding: 10px;">🌓</span>
-        <h1>DiaManager</h1>
-        <button id="btn-abrir-perfil" class="btn-perfil">⚙️</button>
-    </header>
-
-    <!-- Tarjeta Principal: Última Medición y Botones Rápidos -->
-    <div id="tarjeta-glucosa" class="bloque-ajustado">
-        <h3 style="margin-bottom: 5px; color: #888; font-weight: normal; font-size: 0.9rem;">Última medición</h3>
-        <h2 id="valor-glucosa">--</h2>
-        <span id="tendencia-glucosa" style="font-size: 1.2rem; color: #888;">N/A</span>
+    <!-- ==========================================================================
+       MARCO Y CHASIS DORADO MONOLÍTICO
+       ========================================================================== -->
+    <main class="chasis-dorado">
         
-        <!-- Botones Rápidos Móviles -->
-        <div class="contenedor-botones-rapidos">
-            <button class="btn-rapido glucosa" onclick="abrirModalRegistroRapido('glucosa')">
-                <span style="font-size: 1.2rem; margin-bottom: 4px;">🩸</span> Glucosa
-            </button>
-            <button class="btn-rapido insulina" onclick="abrirModalRegistroRapido('insulina')">
-                <span style="font-size: 1.2rem; margin-bottom: 4px;">💉</span> Insulina
-            </button>
-            <button class="btn-rapido factor" onclick="abrirModalRegistroRapido('factor')">
-                <span style="font-size: 1.2rem; margin-bottom: 4px;">⚡</span> Factor
-            </button>
-        </div>
-    </div>
+        <div id="contenedor-fijo-superior">
+            <header class="bloque-ajustado">
+                <h1><span id="btn-toggle-theme" onclick="toggleTema()">🐾 Pawsitive Gluc</span></h1>
+            </header>
 
-    <!-- Contenedor del Gráfico (Oculto por defecto) -->
-    <div id="contenedor-grafico" class="bloque-ajustado">
-        <canvas id="grafico-tendencias"></canvas>
-    </div>
-
-    <!-- Barra de Herramientas -->
-    <div class="seccion-herramientas">
-        <h4 class="titulo-herramientas">Herramientas</h4>
-        <div class="botones-herramientas">
-            <button class="btn-herramienta" id="btn-toggle-grafico">
-                <span class="icono">📊</span>
-                <span class="texto">Gráfico</span>
-            </button>
-            <button class="btn-herramienta" id="btn-exportar">
-                <span class="icono">📤</span>
-                <span class="texto">Exportar</span>
-            </button>
-            <button class="btn-herramienta" id="btn-limpiar">
-                <span class="icono">🗑️</span>
-                <span class="texto">Limpiar</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Contenedor Dinámico para Alertas/Pendientes -->
-<div class="seccion-vertical bloque-ajustado" id="contenedor-pendientes"></div>
-
-<!-- Historial de Registros -->
-<div class="seccion-vertical bloque-ajustado" id="seccion-informes">
-    <div class="header-colapsable" onclick="toggleAcordeon('acordeon-historial', this)">
-        <h3 style="margin: 0; font-size: 1.2rem;">📋 Historial Reciente</h3>
-        <span class="icono-colapso">▼</span>
-    </div>
-    <div id="acordeon-historial" class="acordeon-container">
-        <div class="acordeon-content">
-            <ul id="lista-historial">
-                <!-- Los registros de JavaScript aparecerán aquí -->
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- ZONA DE MODALES (VENTANAS EMERGENTES)      -->
-<!-- ========================================== -->
-
-<!-- Modal: Registro de Datos -->
-<dialog id="modal-registro">
-    <h2 id="titulo-modal" style="margin-top: 0; color: var(--h1-color); font-size: 1.5rem; text-align: center;">Nuevo Registro</h2>
-    
-    <div class="selector-matriz" style="margin-bottom: 15px;">
-        <div class="opcion-tipo activo" data-tipo="general" onclick="seleccionarTipoRegistro('general')">General</div>
-        <div class="opcion-tipo" data-tipo="glucosa" onclick="seleccionarTipoRegistro('glucosa')">Glucosa</div>
-        <div class="opcion-tipo" data-tipo="insulina" onclick="seleccionarTipoRegistro('insulina')">Insulina</div>
-        <div class="opcion-tipo" data-tipo="factor" onclick="seleccionarTipoRegistro('factor')">Factor</div>
-    </div>
-
-    <!-- Campos Dinámicos -->
-    <div id="campos-dinamicos">
-        <div class="grupo-reactivo grupo-glucosa">
-            <label>Nivel de Glucosa (mg/dL):</label>
-            <input type="number" id="input-glucosa" placeholder="Ej. 110">
-        </div>
-
-        <div class="grupo-reactivo grupo-insulina">
-            <label>Insulina Rápida (Unidades):</label>
-            <input type="number" id="input-insulina" step="0.5" placeholder="Ej. 2">
-        </div>
-
-        <div class="grupo-reactivo grupo-factor">
-            <label>Factor que altera la glucosa:</label>
-            <div class="checkbox-grupo">
-                <label class="chip"><input type="checkbox" value="Deporte"> 🏃 Deporte</label>
-                <label class="chip"><input type="checkbox" value="Estrés"> 😰 Estrés</label>
-                <label class="chip"><input type="checkbox" value="Enfermedad"> 🤒 Enfermedad</label>
-                <label class="chip"><input type="checkbox" value="Alcohol"> 🍷 Alcohol</label>
-                <label class="chip"><input type="checkbox" value="Regla"> 🩸 Regla</label>
-            </div>
-            
-            <div id="modificadores-dinamicos"></div>
-        </div>
-    </div>
-
-    <label>Fecha y Hora:</label>
-    <div style="display: flex; gap: 10px;">
-        <input type="date" id="input-fecha">
-        <input type="time" id="input-hora">
-    </div>
-
-    <div class="button-row">
-        <button class="btn-secondary" onclick="cerrarModal('modal-registro')" style="flex: 1;">Cancelar</button>
-        <button class="btn-form" onclick="guardarRegistro()" style="flex: 2; margin-top: 0;">Guardar</button>
-    </div>
-</dialog>
-
-<!-- Modal: Configuración y Perfil (El panel avanzado que vimos) -->
-<dialog id="modal-perfil" style="max-width: 450px;">
-    <h2 style="margin-top: 0; color: var(--h1-color); font-size: 1.5rem; text-align: center; margin-bottom: 20px;">Configuración</h2>
-    
-    <div class="panel-configuracion">
-        <!-- Bloque: Inteligencia Artificial -->
-        <div class="bloque-seccion">
-            <h3 class="titulo-seccion">Inteligencia Artificial</h3>
-            <p class="subtitulo-seccion">Ajusta cómo la IA de DiaManager se comunica contigo.</p>
-            
-            <div class="fila-config">
-                <div class="cabecera-fila">
-                    <div class="info-columna">
-                        <span class="titulo-opcion">Tono del Asistente</span>
-                        <span class="desc-opcion">Selecciona la personalidad de los mensajes automáticos y alertas.</span>
-                    </div>
-                </div>
-                <div class="subcontenedor-opciones">
-                    <div class="grupo-selector">
-                        <span class="etiqueta-selector">Estilo de respuesta:</span>
-                        <select id="config-tono-ia">
-                            <option value="medico">Médico (Formal y técnico)</option>
-                            <option value="empatica" selected>Empático (Cálido y motivador)</option>
-                            <option value="directa">Directo (Conciso, solo datos)</option>
-                        </select>
-                    </div>
-                    <div class="caja-vista-previa">
-                        <div class="titulo-preview">Vista previa del tono</div>
-                        <div class="contenido-preview" id="preview-tono">"¡Buen trabajo! Tu glucosa está en rango. Sigue así."</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bloque: Contexto y Precisión -->
-        <div class="bloque-seccion">
-            <h3 class="titulo-seccion">Contexto y Precisión</h3>
-            <p class="subtitulo-seccion">Proporciona datos del entorno para mejorar el análisis de tendencias.</p>
-            
-            <div class="fila-config">
-                <div class="cabecera-fila">
-                    <div class="info-columna">
-                        <span class="titulo-opcion">Clima y Temperatura</span>
-                        <span class="desc-opcion">Cruza tus datos de glucosa con picos de calor o frío extremo.</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="config-clima" onchange="toggleGeolocalizacion(this)">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+            <section id="tarjeta-glucosa" class="bloque-ajustado">
+                <button id="abrir-perfil" class="btn-perfil" onclick="abrirModal('modal-menu-perfil')">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d4af37'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>" alt="Perfil Mascota" class="img-icono-perfil">
+                </button>
+                <p style="margin:0; color: var(--text-muted); font-size: 0.8rem;">Última medición</p>
+                <h2 id="valor-glucosa">---</h2>
                 
-                <div class="alerta-geolocalizacion oculto" id="alerta-geo">
-                    <span style="font-size: 1.5rem;">📍</span>
-                    <span class="texto-alerta">Para obtener el clima, DiaManager solicitará acceso a tu ubicación de forma segura. Solo se usará en el momento del registro.</span>
-                    <button class="btn-aceptar" onclick="solicitarPermisoUbicacion()">Permitir Ubicación</button>
+                <div class="contenedor-botones-rapidos">
+                    <button class="btn-rapido glucosa" onclick="abrirModalConTipo('glucosa')">
+                        <span style="font-size: 1.2em;">🩸</span>
+                        <span>Glucosa</span>
+                    </button>
+
+                    <button class="btn-rapido insulina" onclick="abrirModalConTipo('insulina')">
+                        <span style="font-size: 1.2em;">💉</span>
+                        <span>Insulina</span>
+                    </button>
+
+                    <button class="btn-rapido factor" onclick="abrirModalConTipo('factor')">
+                        <span style="font-size: 1.2em;">🍚</span>
+                        <span>Factores</span>
+                    </button>
+                </div>
+            </section>
+
+            <div id="contenedor-pendientes" class="bloque-ajustado" style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;"></div>
+        </div>
+
+        <section id="contenedor-grafico">
+            <canvas id="miGrafica"></canvas>
+        </section>
+
+        <section class="bloque-ajustado seccion-vertical">
+            <div class="header-colapsable" onclick="toggleSeccion('acordeon-historial', 'icono-historial')">
+                <h3 style="margin: 0; color: var(--h1-color);">📆 Historial</h3>
+                <span id="icono-historial" class="icono-colapso">🔼</span>
+            </div>
+            
+            <div id="acordeon-historial" class="acordeon-container">
+                <div class="acordeon-content">
+                    <div style="width: 100%; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 12px; margin-top: 10px; margin-bottom: 15px;">
+                        <div class="selector-matriz" style="flex: 1;">
+                            <span class="opcion-tipo activo" data-tipo="Todo" onclick="cambiarFiltroTipo('Todo')">Todo</span>
+                            <span class="opcion-tipo" data-tipo="G" onclick="cambiarFiltroTipo('G')">G</span>
+                            <span class="opcion-tipo" data-tipo="I" onclick="cambiarFiltroTipo('I')">I</span>
+                            <span class="opcion-tipo" data-tipo="F" onclick="cambiarFiltroTipo('F')">F</span>
+                        </div>
+                        <div class="selector-matriz" style="flex: 1;">
+                            <span class="opcion-tiempo activo" data-filtro="D" onclick="cambiarFiltroTiempo('D')">D</span>
+                            <span class="opcion-tiempo" data-filtro="S" onclick="cambiarFiltroTiempo('S')">S</span>
+                            <span class="opcion-tiempo" data-filtro="M" onclick="cambiarFiltroTiempo('M')">M</span>
+                            <span class="opcion-tiempo" data-filtro="T" onclick="cambiarFiltroTiempo('T')">Todo</span>
+                        </div>
+                    </div>
+                    <ul id="lista-historial" style="padding-left: 15px; margin: 0; color: var(--text-muted); font-size: 0.85rem;"></ul>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="button-row" style="margin-top: 25px;">
-        <button class="btn-secondary" onclick="cerrarModal('modal-perfil')" style="flex: 1;">Cerrar</button>
-        <button class="btn-form" onclick="guardarConfiguracionPerfil()" style="flex: 1; margin-top: 0;">Guardar</button>
-    </div>
-</dialog>
+        <section id="seccion-diagnostico" class="bloque-ajustado seccion-vertical">
+            <div class="header-colapsable" onclick="toggleSeccion('acordeon-diagnostico', 'icono-diagnostico')">
+                <h3 style="margin: 0; color: var(--h1-color); display: flex; align-items: center; gap: 10px;">✍ Diagnóstico IA</h3>
+                <span id="icono-diagnostico" class="icono-colapso">🔼</span>
+            </div>
 
+            <div id="acordeon-diagnostico" class="acordeon-container">
+                <div class="acordeon-content" style="padding-top: 15px;">
+                    
+                    <div class="sub-acordeon" style="margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;">
+                        <div class="header-colapsable" style="background: rgba(46, 125, 50, 0.15); padding: 10px 15px;" onclick="toggleSeccion('acordeon-glucosa', 'icono-glucosa')">
+                            <h4 style="margin: 0; color: #4caf50;">🩸 Glucosa</h4>
+                            <span id="icono-glucosa" class="icono-colapso" style="font-size: 1rem;">🔽</span>
+                        </div>
+                        <div id="acordeon-glucosa" class="acordeon-container colapsado">
+                            <div class="acordeon-content" style="padding: 15px; background: var(--card-bg);">
+                                <div class="guia-tutor" style="background: rgba(251, 192, 45, 0.15); border-left: 4px solid #FBC02D; padding: 10px; border-radius: 4px; font-size: 0.85rem; color: var(--text-main); margin-bottom: 15px;">
+                                    <strong>💡 Tip del Asistente:</strong> Aquí analizamos las horas donde la glucosa es más estable y calculamos el "Nadir" (punto más bajo tras la insulina).
+                                </div>
+                                <div class="dato-card" style="margin-bottom: 10px;">
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Mejores horas (Estabilidad):</span>
+                                    <div id="diag-glucosa-horas" style="font-weight: bold; color: #4caf50;">Recopilando patrón...</div>
+                                </div>
+                                <div class="dato-card">
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Nadir estimado:</span>
+                                    <div id="diag-glucosa-nadir" style="font-weight: bold; color: #4caf50;">Calculando...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="sub-acordeon" style="margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;">
+                        <div class="header-colapsable" style="background: rgba(21, 101, 192, 0.15); padding: 10px 15px;" onclick="toggleSeccion('acordeon-insulina', 'icono-insulina')">
+                            <h4 style="margin: 0; color: #42a5f5;">💉 Insulina</h4>
+                            <span id="icono-insulina" class="icono-colapso" style="font-size: 1rem;">🔽</span>
+                        </div>
+                        <div id="acordeon-insulina" class="acordeon-container colapsado">
+                            <div class="acordeon-content" style="padding: 15px; background: var(--card-bg);">
+                                <div class="dato-card" style="margin-bottom: 10px;">
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Sensibilidad:</span>
+                                    <div id="diag-insulina-sensibilidad" style="font-weight: bold; color: #42a5f5;">Requiere más datos...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- AQUÍ PEGAS TODA LA PARTE 3 (Mi JavaScript, incluyendo <script>) -->
+                </div>
+            </div>
+        </section>
 
+        <section id="seccion-informes" class="bloque-ajustado seccion-vertical">
+            <div class="header-colapsable" onclick="toggleSeccion('acordeon-informes', 'icono-informes')">
+                <h3 style="margin: 0; color: var(--h1-color);">📟 Motor de Informes Clínicos</h3>
+                <span id="icono-informes" class="icono-colapso">🔼</span>
+            </div>
 
-
-<!-- ========================================== -->
-<!-- PARTE 3: JAVASCRIPT (EL MOTOR LÓGICO)      -->
-<!-- ========================================== -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // --- VARIABLES GLOBALES ---
-    let registros = JSON.parse(localStorage.getItem('diamanager_registros')) || [];
-    let graficoInstancia = null;
-
-    // --- INICIALIZACIÓN ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Cargar tema guardado
-        const temaGuardado = localStorage.getItem('diamanager_tema') || 'light';
-        if(temaGuardado === 'dark') document.body.classList.add('theme-dark');
-        else if(temaGuardado === 'modern') document.body.classList.add('theme-modern');
-
-        // Configurar fechas y horas por defecto al abrir la app
-        const now = new Date();
-        document.getElementById('input-fecha').value = now.toISOString().split('T')[0];
-        document.getElementById('input-hora').value = now.toTimeString().slice(0,5);
-
-        // Listeners de la Interfaz
-        document.getElementById('btn-toggle-theme').addEventListener('click', cambiarTema);
-        document.getElementById('btn-abrir-perfil').addEventListener('click', () => abrirModal('modal-perfil'));
-        document.getElementById('btn-toggle-grafico').addEventListener('click', toggleGrafico);
-        document.getElementById('btn-exportar').addEventListener('click', exportarDatos);
-        document.getElementById('btn-limpiar').addEventListener('click', limpiarDatos);
-
-        // Listener para los botones "chip" de los factores (Deporte, Alcohol, etc.)
-        document.querySelectorAll('.chip input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', generarModificadoresDinamicos);
-        });
-
-        // Listener para la vista previa del tono de IA en Configuración
-        document.getElementById('config-tono-ia').addEventListener('change', (e) => {
-            const preview = document.getElementById('preview-tono');
-            if(e.target.value === 'medico') preview.innerText = "Paciente presenta glucosa en rango óptimo. Mantener pauta actual.";
-            if(e.target.value === 'empatica') preview.innerText = "¡Buen trabajo! Tu glucosa está en rango. Sigue así, lo estás haciendo genial.";
-            if(e.target.value === 'directa') preview.innerText = "Glucosa en rango: 105 mg/dL. Sin alertas.";
-        });
-
-        actualizarInterfaz();
-    });
-
-    // --- CONTROL DE MODALES ---
-    function abrirModal(id) {
-        document.getElementById(id).showModal();
-        document.body.classList.add('modal-abierto'); // Evita el rebote de fondo en móviles
-    }
-
-    function cerrarModal(id) {
-        document.getElementById(id).close();
-        document.body.classList.remove('modal-abierto');
-    }
-
-    // --- LÓGICA DE REGISTRO ---
-    function abrirModalRegistroRapido(tipo) {
-        abrirModal('modal-registro');
-        seleccionarTipoRegistro(tipo);
-    }
-
-    function seleccionarTipoRegistro(tipo) {
-        // Actualizar UI del selector
-        document.querySelectorAll('.opcion-tipo').forEach(el => el.classList.remove('activo'));
-        document.querySelector(`.opcion-tipo[data-tipo="${tipo}"]`).classList.add('activo');
-
-        // Ocultar todos los grupos
-        document.querySelectorAll('.grupo-reactivo').forEach(el => el.style.display = 'none');
-
-        // Mostrar solo lo relevante
-        if(tipo === 'general') {
-            document.querySelectorAll('.grupo-reactivo').forEach(el => el.style.display = 'block');
-        } else {
-            document.querySelector(`.grupo-${tipo}`).style.display = 'block';
-        }
-    }
-
-    function generarModificadoresDinamicos() {
-        const contenedor = document.getElementById('modificadores-dinamicos');
-        contenedor.innerHTML = ''; 
-        
-        const seleccionados = Array.from(document.querySelectorAll('.chip input:checked')).map(cb => cb.value);
-
-        if (seleccionados.includes('Deporte')) {
-            contenedor.innerHTML += `
-                <div style="margin-top:10px;">
-                    <label style="font-size:0.75rem;">Intensidad del Deporte:</label>
-                    <div class="btn-grupo-intensidad" id="grupo-deporte">
-                        <div class="btn-intensidad activo" onclick="seleccionarIntensidad(this)">Ligero</div>
-                        <div class="btn-intensidad" onclick="seleccionarIntensidad(this)">Moderado</div>
-                        <div class="btn-intensidad" onclick="seleccionarIntensidad(this)">Intenso</div>
+            <div id="acordeon-informes" class="acordeon-container">
+                <div class="acordeon-content">
+                    <div class="contenedor-bloques-informe" style="margin-top: 15px; display: flex; gap: 10px;">
+                        <div style="flex:1; background: var(--card-bg); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Media Filtrada</span>
+                            <div id="reporte-media" style="font-size: 1.2rem; font-weight: bold; color: var(--accent-color); margin-top: 5px;">---</div>
+                        </div>
+                        <div style="flex:1; background: var(--card-bg); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Tiempo en Rango</span>
+                            <div id="reporte-rango" style="font-size: 1.2rem; font-weight: bold; color: var(--h1-color); margin-top: 5px;">---</div>
+                        </div>
                     </div>
                 </div>
-            `;
-        }
-    }
+            </div>
+        </section>
 
-    function seleccionarIntensidad(elemento) {
-        const hermanos = elemento.parentElement.children;
-        for(let hermano of hermanos) hermano.classList.remove('activo');
-        elemento.classList.add('activo');
-    }
+        <div class="seccion-herramientas" style="margin-top: 20px;">
+            <h3 class="titulo-herramientas">Backup y Exportación</h3>
+            <div class="botones-herramientas">
+                <button id="btn-importar" class="btn-herramienta" onclick="document.getElementById('input-archivo-importar').click()">
+                    <span class="icono">📂</span><span class="texto">Importar</span>
+                </button>
+                <button id="btn-exportar" class="btn-herramienta">
+                    <span class="icono">💾</span><span class="texto">Exportar</span>
+                </button>
+                <button class="btn-herramienta" onclick="window.print()">
+                    <span class="icono">🖨️</span><span class="texto">Print/PDF</span>
+                </button>
+            </div>
+        </div>
+        <input type="file" id="input-archivo-importar" accept=".json" class="hidden">
 
-    function guardarRegistro() {
-        const tipoActual = document.querySelector('.opcion-tipo.activo').dataset.tipo;
-        const fecha = document.getElementById('input-fecha').value;
-        const hora = document.getElementById('input-hora').value;
-        
-        let nuevoRegistro = {
-            id: Date.now(),
-            fecha: `${fecha} ${hora}`,
-            tipo: tipoActual,
-            glucosa: document.getElementById('input-glucosa').value,
-            insulina: document.getElementById('input-insulina').value,
-            factores: Array.from(document.querySelectorAll('.chip input:checked')).map(cb => cb.value)
-        };
+        <footer style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.75rem;">
+            Desarrollado por Manuel Fortuny Ruiz
+        </footer>
+    </main>
 
-        // Si hay deporte, capturamos la intensidad
-        if(nuevoRegistro.factores.includes('Deporte')) {
-            const intensidad = document.querySelector('#grupo-deporte .btn-intensidad.activo');
-            if(intensidad) nuevoRegistro.detalleDeporte = intensidad.innerText;
-        }
+    <!-- ==========================================================================
+       MODALES DIALOG
+       ========================================================================== -->
+    <dialog id="modal-opciones-toma">
+        <h3 style="margin-top:0; text-align: center; color: var(--accent-color);">Confirmar Toma</h3>
+        <p id="texto-toma-pendiente" style="text-align:center; font-size: 0.95rem; margin-bottom: 20px;"></p>
+        <button class="btn-form" onclick="cerrarSubModal('modal-opciones-toma')" style="background-color: #4A7C44;">✅ Confirmar</button>
+        <button type="button" class="btn-form" style="background-color: transparent; color: var(--text-muted);" onclick="cerrarSubModal('modal-opciones-toma')">Cancelar</button>
+    </dialog>
 
-        // Validación básica
-        if (!nuevoRegistro.glucosa && !nuevoRegistro.insulina && nuevoRegistro.factores.length === 0) {
-            alert('Por favor, ingresa al menos un dato válido.');
-            return;
-        }
-
-        registros.unshift(nuevoRegistro); // Añadir al principio
-        guardarDatosLocal();
-        actualizarInterfaz();
-        
-        // Limpiar formulario y cerrar
-        document.getElementById('input-glucosa').value = '';
-        document.getElementById('input-insulina').value = '';
-        document.querySelectorAll('.chip input').forEach(cb => cb.checked = false);
-        document.getElementById('modificadores-dinamicos').innerHTML = '';
-        cerrarModal('modal-registro');
-    }
-
-    // --- ACTUALIZACIÓN DE INTERFAZ ---
-    function actualizarInterfaz() {
-        renderizarHistorial();
-        actualizarUltimaGlucosa();
-        if(graficoInstancia) actualizarGrafico();
-    }
-
-    function renderizarHistorial() {
-        const lista = document.getElementById('lista-historial');
-        lista.innerHTML = '';
-
-        if(registros.length === 0) {
-            lista.innerHTML = '<li style="justify-content:center; color:#888;">No hay registros recientes</li>';
-            return;
-        }
-
-        registros.slice(0, 10).forEach(reg => {
-            const li = document.createElement('li');
+    <dialog id="modal-registro">
+        <form id="form-registro" onsubmit="guardarRegistro(event)">
+            <input type="hidden" id="input-tipo" value="glucosa">
+            <h3 id="titulo-modal" style="margin-top:0;">Nuevo Registro</h3>
             
-            let htmlContenido = `<div><strong>${reg.fecha.split(' ')[1]}</strong><br>`;
+            <div id="bloque-glucosa">
+                <label for="input-valor">Glucosa (mg/dL)</label>
+                <input type="number" id="input-valor" placeholder="Ej: 120">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label for="input-fecha">Fecha</label>
+                    <input type="date" id="input-fecha" required>
+                </div>
+                <div style="flex: 1;">
+                    <label for="input-hora">Hora</label>
+                    <input type="time" id="input-hora" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-form">Guardar Registro</button>
+            <button type="button" class="btn-form" style="background-color: #777;" onclick="cerrarSubModal('modal-registro')">Cancelar</button>
+        </form>
+    </dialog> 
+
+    <dialog id="modal-menu-perfil">
+        <h3 style="margin-top:0; text-align: center;">Perfil</h3>
+        <button class="btn-form" onclick="abrirSubPerfil('basico')">Perfil Mascota</button>
+        <button class="btn-form" onclick="abrirSubPerfil('avanzada')" style="background-color: #607D8B; margin-top: 5px;">⚙️ Configuración Avanzada</button>
+        <button type="button" class="btn-form" style="background-color: #777; margin-top: 15px;" onclick="cerrarSubModal('modal-menu-perfil')">Cerrar</button>
+    </dialog>
+
+    <dialog id="modal-avanzada">
+        <h3 style="margin-top:0; text-align: center;">⚙️ Configuración Avanzada</h3>
+        <div class="fila-config">
+            <div class="cabecera-fila">
+                <div class="info-columna">
+                    <span class="titulo-opcion">Geolocalización</span>
+                    <span class="desc-opcion">Registrar ubicación en cada toma.</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chk-geo">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        <button type="button" class="btn-form" style="background-color: #777;" onclick="cerrarSubModal('modal-avanzada')">Cerrar</button>
+    </dialog>
+
+    <!-- ==========================================================================
+       JAVASCRIPT FUNCIONAL
+       ========================================================================== -->
+    <script>
+        // Estado Global
+        let miGrafico = null;
+        let registros = [
+            { fecha: '2026-07-21', hora: '08:00', valor: 140, tipo: 'glucosa' },
+            { fecha: '2026-07-21', hora: '12:00', valor: 95, tipo: 'glucosa' },
+            { fecha: '2026-07-21', hora: '16:00', valor: 180, tipo: 'glucosa' }
+        ];
+
+        // Inicializar al cargar el DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            inicializarGrafico();
+            actualizarUI();
             
-            if(reg.glucosa) htmlContenido += `<span style="color:var(--accent-color); font-weight:bold;">${reg.glucosa} mg/dL</span> `;
-            if(reg.insulina) htmlContenido += `<span style="color:#1976D2;">💉 ${reg.insulina}U</span><br>`;
+            // Establecer fechas por defecto
+            const ahora = new Date();
+            document.getElementById('input-fecha').value = ahora.toISOString().split('T')[0];
+            document.getElementById('input-hora').value = ahora.toTimeString().substring(0, 5);
+        });
+
+        // Alternar Tema Claro / Oscuro
+        function toggleTema() {
+            const body = document.body;
+            const actual = body.getAttribute('data-theme');
+            const nuevo = actual === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', nuevo);
             
-            if(reg.factores.length > 0) {
-                htmlContenido += `<div style="margin-top:4px;">`;
-                reg.factores.forEach(f => {
-                    let extra = (f === 'Deporte' && reg.detalleDeporte) ? ` (${reg.detalleDeporte})` : '';
-                    htmlContenido += `<span class="tags-factores">${f}${extra}</span>`;
-                });
-                htmlContenido += `</div>`;
+            // Actualizar colores del gráfico
+            if (miGrafico) {
+                const colorTexto = nuevo === 'light' ? '#2c2c30' : '#f0f0f5';
+                miGrafico.options.scales.x.ticks.color = colorTexto;
+                miGrafico.options.scales.y.ticks.color = colorTexto;
+                miGrafico.update();
+            }
+        }
+
+        // Acordeones Expandir / Colapsar
+        function toggleSeccion(idContenedor, idIcono) {
+            const cont = document.getElementById(idContenedor);
+            const icono = document.getElementById(idIcono);
+            
+            if (cont.classList.contains('colapsado')) {
+                cont.classList.remove('colapsado');
+                icono.textContent = '🔼';
+            } else {
+                cont.classList.add('colapsado');
+                icono.textContent = '🔽';
+            }
+        }
+
+        // Manejo de Modales
+        function abrirModal(id) {
+            document.getElementById(id).showModal();
+        }
+
+        function cerrarSubModal(id) {
+            document.getElementById(id).close();
+        }
+
+        function abrirModalConTipo(tipo) {
+            document.getElementById('input-tipo').value = tipo;
+            document.getElementById('titulo-modal').textContent = `Nuevo Registro (${tipo.toUpperCase()})`;
+            abrirModal('modal-registro');
+        }
+
+        function abrirSubPerfil(tipo) {
+            cerrarSubModal('modal-menu-perfil');
+            if(tipo === 'avanzada') abrirModal('modal-avanzada');
+        }
+
+        // Filtros Historial
+        function cambiarFiltroTipo(tipo) {
+            document.querySelectorAll('.opcion-tipo').forEach(el => el.classList.remove('activo'));
+            event.target.classList.add('activo');
+        }
+
+        function cambiarFiltroTiempo(tiempo) {
+            document.querySelectorAll('.opcion-tiempo').forEach(el => el.classList.remove('activo'));
+            event.target.classList.add('activo');
+        }
+
+        // Guardar Nuevo Registro
+        function guardarRegistro(e) {
+            e.preventDefault();
+            const valor = parseFloat(document.getElementById('input-valor').value);
+            const fecha = document.getElementById('input-fecha').value;
+            const hora = document.getElementById('input-hora').value;
+            const tipo = document.getElementById('input-tipo').value;
+
+            if (valor) {
+                registros.push({ fecha, hora, valor, tipo });
+                actualizarUI();
+                cerrarSubModal('modal-registro');
+                document.getElementById('input-valor').value = '';
+            }
+        }
+
+        // Actualizar UI y Métricas
+        function actualizarUI() {
+            if (registros.length > 0) {
+                const ultimo = registros[registros.length - 1];
+                document.getElementById('valor-glucosa').textContent = `${ultimo.valor} mg/dL`;
+                
+                // Actualizar lista historial
+                const lista = document.getElementById('lista-historial');
+                lista.innerHTML = registros.map(r => `<li>${r.fecha} ${r.hora} - <strong>${r.valor} mg/dL</strong> (${r.tipo})</li>`).join('');
+
+                // Media
+                const suma = registros.reduce((acc, r) => acc + r.valor, 0);
+                const media = Math.round(suma / registros.length);
+                document.getElementById('reporte-media').textContent = `${media} mg/dL`;
+                document.getElementById('reporte-rango').textContent = '85%';
             }
             
-            htmlContenido += `</div>
-                <div><button class="btn-accion btn-borrar" onclick="borrarRegistro(${reg.id})">🗑️</button></div>
-            `;
-            
-            li.innerHTML = htmlContenido;
-            lista.appendChild(li);
-        });
-    }
-
-    function actualizarUltimaGlucosa() {
-        const regGlucosa = registros.find(r => r.glucosa);
-        const elValor = document.getElementById('valor-glucosa');
-        const elTendencia = document.getElementById('tendencia-glucosa');
-
-        if(regGlucosa) {
-            elValor.innerText = regGlucosa.glucosa;
-            // Lógica simple de tendencia visual
-            if(regGlucosa.glucosa > 180) { elValor.style.color = '#E53935'; elTendencia.innerText = '↑ Alta'; }
-            else if(regGlucosa.glucosa < 70) { elValor.style.color = '#1E88E5'; elTendencia.innerText = '↓ Baja'; }
-            else { elValor.style.color = '#43A047'; elTendencia.innerText = '→ En Rango'; }
-        } else {
-            elValor.innerText = '--';
-            elTendencia.innerText = 'N/A';
+            actualizarGrafico();
         }
-    }
 
-    function borrarRegistro(id) {
-        if(confirm('¿Borrar este registro?')) {
-            registros = registros.filter(r => r.id !== id);
-            guardarDatosLocal();
-            actualizarInterfaz();
+        // Renderizado del Gráfico con Chart.js
+        function inicializarGrafico() {
+            const ctx = document.getElementById('miGrafica').getContext('2d');
+            miGrafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Glucosa (mg/dL)',
+                        data: [],
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#d4af37'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#a0a0ab', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#a0a0ab', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
         }
-    }
 
-    function guardarDatosLocal() {
-        localStorage.setItem('diamanager_registros', JSON.stringify(registros));
-    }
-
-    // --- GRÁFICOS ---
-    function toggleGrafico() {
-        const cont = document.getElementById('contenedor-grafico');
-        if(cont.style.display === 'none' || cont.style.display === '') {
-            cont.style.display = 'block';
-            if(!graficoInstancia) inicializarGrafico();
-            else actualizarGrafico();
-        } else {
-            cont.style.display = 'none';
+        function actualizarGrafico() {
+            if (!miGrafico) return;
+            miGrafico.data.labels = registros.map(r => r.hora);
+            miGrafico.data.datasets[0].data = registros.map(r => r.valor);
+            miGrafico.update();
         }
-    }
-
-    function inicializarGrafico() {
-        const ctx = document.getElementById('grafico-tendencias').getContext('2d');
-        graficoInstancia = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [] },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: false, min: 40, max: 300 } }
-            }
-        });
-        actualizarGrafico();
-    }
-
-    function actualizarGrafico() {
-        if(!graficoInstancia) return;
-        
-        const regsGlucosa = registros.filter(r => r.glucosa).slice(0,7).reverse();
-        const labels = regsGlucosa.map(r => r.fecha.split(' ')[1]);
-        const data = regsGlucosa.map(r => r.glucosa);
-
-        graficoInstancia.data.labels = labels;
-        graficoInstancia.data.datasets = [{
-            label: 'Glucosa (mg/dL)',
-            data: data,
-            borderColor: '#4A7C44',
-            backgroundColor: 'rgba(74, 124, 68, 0.2)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-        }];
-        graficoInstancia.update();
-    }
-
-    // --- EXTRAS Y UTILIDADES ---
-    function cambiarTema() {
-        if (document.body.classList.contains('theme-dark')) {
-            document.body.classList.remove('theme-dark');
-            document.body.classList.add('theme-modern');
-            localStorage.setItem('diamanager_tema', 'modern');
-        } else if (document.body.classList.contains('theme-modern')) {
-            document.body.classList.remove('theme-modern');
-            localStorage.setItem('diamanager_tema', 'light');
-        } else {
-            document.body.classList.add('theme-dark');
-            localStorage.setItem('diamanager_tema', 'dark');
-        }
-    }
-
-    function toggleAcordeon(id, elementoHeader) {
-        const container = document.getElementById(id);
-        const icono = elementoHeader.querySelector('.icono-colapso');
-        container.classList.toggle('colapsado');
-        icono.style.transform = container.classList.contains('colapsado') ? 'rotate(0deg)' : 'rotate(180deg)';
-    }
-
-    function toggleGeolocalizacion(checkbox) {
-        const alerta = document.getElementById('alerta-geo');
-        if(checkbox.checked) alerta.classList.remove('oculto');
-        else alerta.classList.add('oculto');
-    }
-
-    function solicitarPermisoUbicacion() {
-        alert("Simulación: Permiso de ubicación concedido.");
-        document.getElementById('alerta-geo').classList.add('oculto');
-    }
-
-    function guardarConfiguracionPerfil() {
-        alert("Configuración guardada correctamente.");
-        cerrarModal('modal-perfil');
-    }
-
-    function limpiarDatos() {
-        if(confirm("¿Estás seguro de borrar TODO tu historial? Esto no se puede deshacer.")) {
-            registros = [];
-            guardarDatosLocal();
-            actualizarInterfaz();
-        }
-    }
-
-    function exportarDatos() {
-        alert("Simulación: Exportando datos a Excel/PDF...");
-    }
-</script>
-
-
-
+    </script>
 </body>
 </html>
