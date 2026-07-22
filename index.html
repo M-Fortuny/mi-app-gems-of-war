@@ -2466,14 +2466,12 @@ window.toggleSeccion = function(containerId, iconId) {
 
 
                 function filtrarRegistros(registros, fTiempo, fTipo) {
-    // Helper para determinar el "Día Veterinario" (El cambio de día ocurre a las 08:00 AM)
     function obtenerDiaVeterinario(fechaStr, horaStr) {
         if (!fechaStr || !horaStr || typeof fechaStr !== 'string') return '1970-01-01';
         
         const partesHora = horaStr.split(':');
         const horas = parseInt(partesHora[0], 10) || 0;
         
-        // Si es antes de las 08:00 AM, pertenece al ciclo del día anterior
         if (horas < 8) {
             const partesFecha = fechaStr.split('-');
             if (partesFecha.length !== 3) return fechaStr; 
@@ -2499,25 +2497,21 @@ window.toggleSeccion = function(containerId, iconId) {
     const hoyISO = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
     const hoyHora = `${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
     
-    // ⚓ ANCLA INTELIGENTE PARA EL MODO D Y D_AYER
     let diaVeterinarioReferencia = obtenerDiaVeterinario(hoyISO, hoyHora);
 
+    // ⚓ ANCLA INTELIGENTE DEFINITIVA PARA EL MODO D:
+    // Siempre que se pida el modo 'D', nos anclamos al último ciclo real del historial con datos,
+    // garantizando que se muestren las 24h completas (de 8 AM a 8 AM) sin importar la hora del sistema.
     if (fTiempo === 'D' || fTiempo === 'D_AYER') {
-        const tieneDatosHoy = registros.some(r => r && r.fecha === hoyISO);
-        
-        if (!tieneDatosHoy) {
-            const copiaParaFechas = [...registros].filter(r => r && r.fecha && r.hora);
-            if (copiaParaFechas.length > 0) {
-                copiaParaFechas.sort((a, b) => new Date(`${b.fecha}T${b.hora}:00`) - new Date(`${a.fecha}T${a.hora}:00`));
-                const ultimoRegistroReal = copiaParaFechas[0];
-                diaVeterinarioReferencia = obtenerDiaVeterinario(ultimoRegistroReal.fecha, ultimoRegistroReal.hora);
-                console.log(`🛡️ Pawsitive Guard: Historial vacío hoy. Anclado al ciclo del: ${diaVeterinarioReferencia}`);
-            }
+        const copiaParaFechas = [...registros].filter(r => r && r.fecha && r.hora);
+        if (copiaParaFechas.length > 0) {
+            copiaParaFechas.sort((a, b) => new Date(`${b.fecha}T${b.hora}:00`) - new Date(`${a.fecha}T${a.hora}:00`));
+            const ultimoRegistroReal = copiaParaFechas[0];
+            diaVeterinarioReferencia = obtenerDiaVeterinario(ultimoRegistroReal.fecha, ultimoRegistroReal.hora);
         }
     }
 
-    // --- CÁLCULO DE LIMITES PARA SEMANA Y MES DIVERGENTES ---
-    // Semana: Lunes 00:00:00 a Domingo 23:59:59
+    // --- LÍMITES PARA SEMANA Y MES ---
     const diaSemana = ahora.getDay(); 
     const distanciaLunes = (diaSemana === 0 ? -6 : 1 - diaSemana);
     const lunesSemana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + distanciaLunes, 0, 0, 0, 0);
@@ -2525,14 +2519,12 @@ window.toggleSeccion = function(containerId, iconId) {
     domingoSemana.setDate(lunesSemana.getDate() + 6);
     domingoSemana.setHours(23, 59, 59, 999);
 
-    // Mes: Día 1 00:00:00 al Último día del mes 23:59:59
     const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0);
     const ultimoDiaMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999);
 
     return registros.filter(r => {
         if (!r || !r.fecha || !r.hora) return false;
 
-        // 1. FILTRADO TEMPORAL
         let pasaTiempo = false;
 
         if (fTiempo === 'T' || fTiempo === 'Todo') {
@@ -2559,7 +2551,6 @@ window.toggleSeccion = function(containerId, iconId) {
             pasaTiempo = (anioReg === ahora.getFullYear());
         }
 
-        // 2. FILTRADO POR TIPO
         let pasaTipo = false;
         const tipoEfectivo = (r.tipo || 'glucosa').toLowerCase();
         
@@ -2576,6 +2567,7 @@ window.toggleSeccion = function(containerId, iconId) {
         return pasaTiempo && pasaTipo;
     });
 }
+
 
 
 
@@ -2885,10 +2877,24 @@ window.toggleSeccion = function(containerId, iconId) {
         return coint ? g.valor : null;
     });
 
-    const puntosFactores = datosGlucosa.map(g => {
-        const coint = datosFactores.find(f => f.fecha === g.fecha && f.hora === g.hora);
-        return coint ? g.valor : null;
+    // Capa 3: Factores (SOLO si hay uno seleccionado en el desplegable)
+const puntosFactores = datosGlucosa.map(g => {
+    // Si no se ha elegido un factor concreto en el menú, no se dibuja nada
+    if (!factorHorizontalSeleccionado) return null;
+
+    const coint = datos.find(f => {
+        if (f.fecha !== g.fecha || f.hora !== g.hora) return false;
+
+        // Búsqueda flexible en las distintas propiedades donde guardas los nombres
+        const nombreEvento = f.evento || f.factor || f.detalles || f.nota || '';
+        const esArrayFactores = Array.isArray(f.factores) && f.factores.includes(factorHorizontalSeleccionado);
+        
+        return esArrayFactores || nombreEvento.toString().trim() === factorHorizontalSeleccionado;
     });
+
+    return coint ? g.valor : null;
+});
+
 
     const ctx = document.getElementById('miGrafica').getContext('2d');
     
@@ -3022,49 +3028,53 @@ window.toggleSeccion = function(containerId, iconId) {
         });
 
                 // --- LÓGICA DE BOTONES FLOTANTES (MODO HORIZONTAL) ---
-        let insulinaHorizontalActiva = false;
-        let factorHorizontalSeleccionado = null;
-        let filtroTiempoHorizontal = 'D'; // Tiempo independiente
+let insulinaHorizontalActiva = false;
+let factorHorizontalSeleccionado = null;
+let filtroTiempoHorizontal = 'D'; // Tiempo independiente
 
-        // Nueva función exclusiva para el tiempo horizontal
-        function cambiarFiltroTiempoHorizontal(filtro) {
-            filtroTiempoHorizontal = filtro;
-            ['D', 'S', 'M', 'T'].forEach(t => {
-                const btn = document.getElementById('btn-horiz-' + t);
-                if (btn) btn.classList.toggle('activo', t === filtro);
-            });
-            refrescarGraficaHorizontal();
-        }
+// 1. Selector de tiempo horizontal (D, S, M, Todo)
+function cambiarFiltroTiempoHorizontal(filtro) {
+    filtroTiempoHorizontal = filtro;
+    
+    // Actualizamos la clase 'activo' en los botones de la barra
+    ['D', 'S', 'M', 'T', 'Todo'].forEach(t => {
+        const btn = document.getElementById('btn-horiz-' + t);
+        if (btn) btn.classList.toggle('activo', t === filtro);
+    });
+    
+    // Lanzamos el refresco completo (gráfica + desplegable de factores)
+    refrescarGraficaHorizontal();
+}
 
-        // 1. Botón Insulina (Activar / Desactivar)
-        function toggleInsulinaHorizontal() {
-            insulinaHorizontalActiva = !insulinaHorizontalActiva;
-            const btnI = document.getElementById('filtro-flotante-insulina');
-            if (btnI) btnI.classList.toggle('activo', insulinaHorizontalActiva);
-            refrescarGraficaHorizontal();
-        }
+// 2. Botón Insulina (Activar / Desactivar)
+function toggleInsulinaHorizontal() {
+    insulinaHorizontalActiva = !insulinaHorizontalActiva;
+    const btnI = document.getElementById('filtro-flotante-insulina');
+    if (btnI) btnI.classList.toggle('activo', insulinaHorizontalActiva);
+    refrescarGraficaHorizontal();
+}
 
-        // 2. Botón Factores (Abrir / Cerrar Menú)
-        function toggleMenuFactoresHorizontal() {
-            const menu = document.getElementById('menu-factores-desplegable');
-            if (!menu) return;
-            
-            if (menu.style.display === 'none' || menu.style.display === '') {
-                cargarListaFactores(); 
-                menu.style.display = 'block';
-            } else {
-                menu.style.display = 'none';
-            }
-        }
-
-                // 3. Generar la lista dinámica de factores reales (Versión Caza-Todo)
-
-
-
-        // --- CARGA DINÁMICA DE FACTORES EN EL DESPLEGABLE HORIZONTAL ---
-function cargarListaFactores(datosDelRango) {
-    const menu = document.getElementById('menu-factores-horizontal');
+// 3. Controlador para mostrar/ocultar el desplegable del botón F
+function toggleMenuFactoresHorizontal() {
+    const menu = document.getElementById('menu-factores-desplegable');
     if (!menu) return;
+
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        const keyStorage = typeof KEY_GLUCOSA !== 'undefined' ? KEY_GLUCOSA : 'misRegistros_v3';
+        const todosLosRegs = JSON.parse(localStorage.getItem(keyStorage) || '[]');
+        const datosDelRango = filtrarRegistros(todosLosRegs, filtroTiempoHorizontal, 'Todo');
+        
+        cargarListaFactores(datosDelRango);
+        menu.style.display = 'block';
+    }
+}
+
+// 4. Carga dinámica de factores reales en el desplegable
+function cargarListaFactores(datosDelRango) {
+    const contenedorOpciones = document.getElementById('lista-factores-opciones');
+    if (!contenedorOpciones) return;
 
     // Si no nos pasan los datos filtrados por rango, los leemos del storage
     let registros = datosDelRango;
@@ -3075,7 +3085,7 @@ function cargarListaFactores(datosDelRango) {
     }
 
     if (!Array.isArray(registros) || registros.length === 0) {
-        menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin registros</div>';
+        contenedorOpciones.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin registros</div>';
         return;
     }
 
@@ -3086,13 +3096,13 @@ function cargarListaFactores(datosDelRango) {
             if (!r) return;
             const tipo = (r.tipo || '').toLowerCase();
 
-            // 1. Extraer del array r.factores (donde guardas 'Paseo', 'Comida', etc.)
+            // Extraer del array r.factores (donde guardas 'Paseo', 'Comida', etc.)
             if (Array.isArray(r.factores)) {
                 r.factores.forEach(f => {
                     if (f && typeof f === 'string') factoresUnicos.add(f.trim());
                 });
             }
-            // 2. Extraer de propiedades individuales si existen
+            // Extraer de propiedades individuales si existen
             const detalle = r.detalles || r.factor || r.evento || r.nota || '';
             if (tipo !== 'glucosa' && tipo !== 'insulina' && detalle) {
                 factoresUnicos.add(detalle.trim());
@@ -3102,7 +3112,7 @@ function cargarListaFactores(datosDelRango) {
         });
 
         if (factoresUnicos.size === 0) {
-            menu.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin factores en este rango</div>';
+            contenedorOpciones.innerHTML = '<div style="padding:10px; color:#888; text-align:center; font-size:12px;">Sin factores en este rango</div>';
             return;
         }
 
@@ -3114,7 +3124,7 @@ function cargarListaFactores(datosDelRango) {
 
         factoresUnicos.forEach(factor => {
             const esActivo = typeof factorHorizontalSeleccionado !== 'undefined' && factorHorizontalSeleccionado === factor;
-            const estiloActivo = esActivo ? 'background: rgba(255,82,82,0.2); font-weight:bold;' : '';
+            const estiloActivo = esActivo ? 'background: rgba(255,82,82,0.2); font-weight:bold;' : 'color: var(--text-main);';
             
             // Escapamos comillas simples
             const factorEscapado = factor.replace(/'/g, "\\'");
@@ -3126,71 +3136,85 @@ function cargarListaFactores(datosDelRango) {
             `;
         });
 
-        menu.innerHTML = html;
+        contenedorOpciones.innerHTML = html;
     } catch (e) {
         console.error("Error al poblar la lista de factores:", e);
     }
 }
 
-
-// --- GESTIÓN DE SELECCIÓN DE FACTOR Y REFRESCO DE LA GRÁFICA ---
+// 5. Función que se ejecuta al elegir una opción del menú
 function seleccionarFactorHorizontal(factor) {
     factorHorizontalSeleccionado = factor;
     
-    const btnF = document.getElementById('btn-factor-h');
-    if (btnF) {
-        if (factor) {
-            btnF.classList.add('activo');
-            btnF.style.background = '#FF5252';
-            btnF.style.color = '#FFF';
-        } else {
-            btnF.classList.remove('activo');
-            btnF.style.background = '';
-            btnF.style.color = '';
-        }
-    }
-
-    const menu = document.getElementById('menu-factores-horizontal');
+    // Ocultamos el menú al elegir
+    const menu = document.getElementById('menu-factores-desplegable');
     if (menu) menu.style.display = 'none';
-
-    if (typeof refrescarGraficaHorizontal === 'function') {
-        refrescarGraficaHorizontal();
-    } else if (typeof actualizarInterfaz === 'function') {
-        actualizarInterfaz();
-    }
+    
+    // Refrescamos la gráfica
+    refrescarGraficaHorizontal();
 }
 
-// --- REFRESCO DE LA GRÁFICA ---
+// 6. Refresco general de la gráfica y capas (UNIFICADO Y MOTOR PROFUNDO)
 function refrescarGraficaHorizontal() {
     const keyStorage = typeof KEY_GLUCOSA !== 'undefined' ? KEY_GLUCOSA : 'misRegistros_v3';
     const todosLosRegs = JSON.parse(localStorage.getItem(keyStorage) || '[]');
     
-    let datosParaGrafica = filtrarRegistros(todosLosRegs, filtroTiempoHorizontal, 'Todo');
+    // 1. Interceptamos el filtro: Motor Matemático de 24h para el gráfico D
+    let datosParaGrafica = [];
+    if (filtroTiempoHorizontal === 'D') {
+        if (todosLosRegs.length > 0) {
+            // Ordenamos cronológicamente
+            const registrosOrdenados = [...todosLosRegs].sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+            const ultimoRegistro = registrosOrdenados[registrosOrdenados.length - 1];
+            
+            // Calculamos exactamente 24h hacia atrás desde el último registro
+            const fechaFin = new Date(`${ultimoRegistro.fecha}T${ultimoRegistro.hora}`);
+            const fechaInicio = new Date(fechaFin.getTime() - (24 * 60 * 60 * 1000));
+            
+            datosParaGrafica = registrosOrdenados.filter(r => {
+                const fechaR = new Date(`${r.fecha}T${r.hora}`);
+                return fechaR >= fechaInicio && fechaR <= fechaFin;
+            });
+        }
+    } else {
+        // Para S, M o Todo, dejamos que la función general haga su trabajo
+        datosParaGrafica = filtrarRegistros(todosLosRegs, filtroTiempoHorizontal, 'Todo');
+    }
+
+    // 2. 🌟 ACTUALIZAR EL DESPLEGABLE: Poblamos la lista de factores con los datos de este rango
+    cargarListaFactores(datosParaGrafica);
+
     let datosFinales = [];
 
-    // 1. Glucosa
+    // 3. Capa Base: Glucosa
     const soloGlucosa = datosParaGrafica.filter(r => (r.valor !== undefined && r.valor !== null) && (!r.tipo || r.tipo === 'glucosa' || r.tipo === 'G'));
     datosFinales = [...soloGlucosa];
 
-    // 2. Insulina
+    // 4. Capa Flotante: Insulina (Puntos Azules)
     if (insulinaHorizontalActiva) {
         const soloInsulina = datosParaGrafica.filter(r => r.tipo === 'insulina' || r.tipo === 'I' || r.dosis !== undefined);
         datosFinales = [...datosFinales, ...soloInsulina];
     }
     
-    // 3. Factores (Misma lógica de búsqueda flexible que en cargarListaFactores)
+    // 5. Capa Flotante: Factores (Rombos Rojos - Búsqueda Profunda)
     if (factorHorizontalSeleccionado) {
         const soloFactores = datosParaGrafica.filter(r => {
-            const detalle = (r.detalles || r.factor || r.evento || r.nota || r.tipo || '').trim();
-            return detalle === factorHorizontalSeleccionado;
+            // A) Búsqueda en propiedades de texto simples
+            const detalleStr = (r.detalles || r.factor || r.evento || r.nota || r.tipo || '').trim();
+            if (detalleStr === factorHorizontalSeleccionado) return true;
+            
+            // B) Búsqueda profunda en arrays (ej. ["Paseo", "Comida"])
+            if (Array.isArray(r.factores) && r.factores.includes(factorHorizontalSeleccionado)) return true;
+            if (Array.isArray(r.detalles) && r.detalles.includes(factorHorizontalSeleccionado)) return true;
+
+            return false;
         });
         datosFinales = [...datosFinales, ...soloFactores];
     }
     
-    // Siempre llamamos a renderizarGrafica para que si el array está vacío, limpie el lienzo
+    // 6. Renderizar lienzo (si está vacío, limpia la gráfica)
     renderizarGrafica(datosFinales);
 }
-
 
 
 
@@ -3309,6 +3333,9 @@ function refrescarGraficaHorizontal() {
                 }
                 return false;
             };
+
+
+
 
                          /* ==========================================================================
                💉 MOTOR DE ALARMAS EXTERNAS CON PROTECCIÓN TOTAL DE MEMORIA (NATIVO)
